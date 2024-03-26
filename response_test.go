@@ -40,6 +40,23 @@ func TestNewResponse(t *testing.T) {
 	if err == nil {
 		t.Error("NewResponse() did not return expected error for HTTP client error")
 	}
+	var result any
+	if resp.DTO(&result) == nil {
+		t.Error("Response DTO() did not return expected error for HTTP client error")
+	}
+
+	if resp.DTOorFail(&result) == nil {
+		t.Error("Response DTOorFail() did not return expected error for HTTP client error")
+	}
+
+	if resp.ResponseBody() != nil {
+		t.Error("Response ResponseBody() did not return expected error for HTTP client error")
+	}
+
+	_, err = resp.ResponseBodyOrFail()
+	if err != nil {
+		return
+	}
 }
 
 // TestResponse_OK tests the OK method of the Response struct.
@@ -112,5 +129,71 @@ func TestResponse_SetData(t *testing.T) {
 	}
 	if len(response.Data) == 0 {
 		t.Error("Response SetData() did not set the response data correctly")
+	}
+}
+
+func TestResponse_SetRequestBody(t *testing.T) {
+	// Test case for setting request body
+	httpReq := &http.Request{
+		Body: io.NopCloser(strings.NewReader(`{"key": "value"}`)),
+	}
+
+	response := Response{}
+	response = response.setRequestBody(httpReq)
+	if response.RequestBody == nil {
+		t.Error("Response SetRequestBody() did not set the request body correctly")
+	}
+
+	// Test case for setting request body with invalid JSON
+	defer func() { _ = recover() }()
+	httpReq = &http.Request{
+		Body: io.NopCloser(strings.NewReader("test body")),
+	}
+
+	response = Response{}
+	response = response.setRequestBody(httpReq)
+	if response.RequestBody == nil {
+		t.Error("Response SetRequestBody() did not set the request body correctly")
+	}
+
+}
+
+func TestNewDTOFactory(t *testing.T) {
+	type Data struct {
+		Key string `json:"key"`
+	}
+
+	// Test case for creating new DTOFactory with content type application/json
+	factory := NewDTOFactory("application/json")
+	if factory == nil {
+		t.Error("NewDTOFactory() returned nil")
+	}
+
+	err := factory.marshall([]byte(`{"key": "value"}`), &Data{})
+	if err != nil {
+		t.Errorf("DTOFactory marshall() returned unexpected error: %v", err)
+	}
+
+	// Test case for creating new DTOFactory with content type text/xml
+	factory = NewDTOFactory("text/xml")
+	if factory == nil {
+		t.Error("NewDTOFactory() returned nil")
+	}
+
+	err = factory.marshall([]byte(`<?xml version="1.0" encoding="UTF-8"?><key>value</key>`), &Data{})
+	if err != nil {
+		t.Errorf("DTOFactory marshall() returned unexpected error: %v", err)
+	}
+
+	// Test case for creating new DTOFactory with multiple content types
+	factory = NewDTOFactory("application/json", "text/xml")
+	if factory == nil {
+		t.Error("NewDTOFactory() returned nil for multiple content types")
+	}
+
+	// Test case for creating new DTOFactory with empty content type
+	factory = NewDTOFactory()
+	if factory == nil {
+		t.Error("NewDTOFactory() returned nil for empty content type")
 	}
 }

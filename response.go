@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"github.com/WEG-Technology/room/store"
 	"io"
 	"net/http"
@@ -69,7 +70,7 @@ func (r Response) setRequestHeader(header http.Header) Response {
 func (r Response) setRequestBody(request *http.Request) Response {
 	if request.Body != nil {
 		decoder := json.NewDecoder(request.Body)
-
+		fmt.Println("decoder", decoder.More())
 		for decoder.More() {
 			if err := decoder.Decode(&r.RequestBody); err != nil {
 				panic(err)
@@ -131,6 +132,8 @@ type IDTOFactory interface {
 
 // NewDTOFactory creates a concrete factory based on content type.
 func NewDTOFactory(contentType ...string) IDTOFactory {
+	fmt.Println("contentType len", len(contentType))
+
 	var ct string
 	if len(contentType) > 0 {
 		ct = contentType[0]

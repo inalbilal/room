@@ -116,6 +116,16 @@ func TestMapStore_IsEmpty(t *testing.T) {
 	if ms.IsEmpty() {
 		t.Errorf("IsEmpty() returned true, expected false for non-empty MapStore")
 	}
+
+	ms.Remove("key1")
+	if !ms.IsEmpty() {
+		t.Errorf("IsEmpty() returned false, expected true for empty MapStore")
+	}
+
+	ms.Set(map[string]any{"key1": "value1", "key2": 42})
+	if ms.IsEmpty() {
+		t.Errorf("IsEmpty() returned true, expected false for non-empty MapStore")
+	}
 }
 
 func TestMapStore_Remove(t *testing.T) {
